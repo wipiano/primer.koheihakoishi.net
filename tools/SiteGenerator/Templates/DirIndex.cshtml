@@ -1,0 +1,18 @@
+@model SiteGenerator.Models.DirIndexViewModel
+<p class="breadcrumb"><a href="../index.html">Top</a></p>
+<h1>@Model.DirTitle</h1>
+@foreach (var cat in Model.Categories)
+{
+    <section class="category">
+        <h2>@cat.CategoryName</h2>
+        <ul class="article-list">
+        @foreach (var a in cat.Articles)
+        {
+            <li>
+                <a href="@(a.FileBaseName).html">@a.Title</a>
+                <span class="difficulty" title="難易度: @a.Label">@a.Stars</span>
+            </li>
+        }
+        </ul>
+    </section>
+}

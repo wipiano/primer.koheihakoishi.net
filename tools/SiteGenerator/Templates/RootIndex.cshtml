@@ -1,0 +1,9 @@
+@model SiteGenerator.Models.RootIndexViewModel
+<h1>技術解説サイト</h1>
+<p>カテゴリ別の目次です。</p>
+<ul class="dir-list">
+@foreach (var d in Model.Directories)
+{
+    <li><a href="@(d.DirKey)/index.html">@d.Title</a></li>
+}
+</ul>

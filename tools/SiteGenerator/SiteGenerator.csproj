@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>SiteGenerator</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- RazorLightが実行時にRoslynでテンプレートをコンパイルする際に参照アセンブリ情報が必要 -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core の Razor テンプレートエンジンをコンソールアプリから利用するためのラッパー -->
+    <PackageReference Include="RazorLight" Version="2.3.1" />
+    <!-- Markdown -> HTML 変換（frontmatter は自前でパースする） -->
+    <PackageReference Include="Markdig" Version="1.3.2" />
+    <!-- frontmatter (YAML) パース -->
+    <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <!-- Razorテンプレート内で生HTML(IHtmlContent)を埋め込むために使用 -->
+    <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Razor テンプレートと静的アセットはビルド出力にそのままコピーする -->
+    <None Include="Templates\**\*.cshtml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+@model SiteGenerator.Models.ArticleViewModel
+<p class="breadcrumb"><a href="../index.html">Top</a> &gt; <a href="index.html">@Model.DirTitle</a></p>
+<h1>@Model.Title</h1>
+<p class="meta">
+    <span class="category-badge">@Model.Category</span>
+    <span class="difficulty" title="難易度: @Model.Label">難易度: @Model.Stars（@Model.Label）</span>
+</p>
+<div class="content">
+@Model.BodyHtml
+</div>
+@if (Model.RelatedArticles.Count > 0)
+{
+    <section class="related">
+        <h2>関連記事</h2>
+        <ul>
+        @foreach (var r in Model.RelatedArticles)
+        {
+            <li><a href="@(r.FileBaseName).html">@r.Title</a></li>
+        }
+        </ul>
+    </section>
+}

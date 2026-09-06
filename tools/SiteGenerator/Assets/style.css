@@ -1,0 +1,64 @@
+/* 最低限の装飾のみ。レイアウトは素のブロック要素に近い形にしている。 */
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  font-family: -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+  line-height: 1.8;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  margin-right: 0.5rem;
+}
+
+.difficulty {
+  font-size: 0.9rem;
+}
+
+section.category h2 {
+  border-bottom: 1px solid #8888;
+  padding-bottom: 0.3rem;
+}
+
+ul.article-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.article-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px dashed #8884;
+}
+
+section.related ul {
+  padding-left: 1.2rem;
+}
+
+pre code.hljs {
+  border-radius: 0.4rem;
+  padding: 1rem !important;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+}
