@@ -10,6 +10,8 @@ prerequisites:
 next:
   - file: record-basic.md
     note: この記事で書いた実装をrecordが自動で生成してくれる仕組みが分かる
+  - file: operator-overloading.md
+    note: ここで触れたoperator ==を含め、演算子を自分で定義する書き方につながる
 related:
   - class-struct-record-basics.md
 ---
