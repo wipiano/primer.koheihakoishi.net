@@ -52,6 +52,8 @@ var yamlDeserializer = new DeserializerBuilder()
     .Build();
 var yamlSerializer = new SerializerBuilder()
     .WithNamingConvention(CamelCaseNamingConvention.Instance)
+    // note が無い参照で "note: " を出力しないようにする
+    .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
     .Build();
 
 var directoryLinks = new List<DirectoryLink>();
@@ -83,6 +85,8 @@ foreach (var dir in Directory.GetDirectories(pagesDir).OrderBy(d => d, StringCom
             Title = frontMatter.Title,
             Category = frontMatter.Category,
             Order = frontMatter.Order,
+            Prerequisites = frontMatter.Prerequisites,
+            Next = frontMatter.Next,
             RelatedFileNames = frontMatter.Related,
             BodyMarkdown = body,
         });
@@ -94,19 +98,18 @@ foreach (var dir in Directory.GetDirectories(pagesDir).OrderBy(d => d, StringCom
 
     foreach (var article in articles)
     {
-        var related = article.RelatedFileNames
-            .Select(name => Path.GetFileNameWithoutExtension(name))
-            .Select(baseName => articlesByBaseName.GetValueOrDefault(baseName))
-            .Where(a => a is not null)
-            .Select(a => new ArticleLink { Title = a!.Title, FileBaseName = a.FileBaseName })
-            .ToList();
+        var prerequisites = ResolveReferences(article, article.Prerequisites.Select(r => (r.File, r.Note)), "前提記事", articlesByBaseName);
+        var next = ResolveReferences(article, article.Next.Select(r => (r.File, r.Note)), "次に読む記事", articlesByBaseName);
+        var related = ResolveReferences(article, article.RelatedFileNames.Select(f => (f, (string?)null)), "関連記事", articlesByBaseName);
 
-        var missing = article.RelatedFileNames
-            .Select(Path.GetFileNameWithoutExtension)
-            .Where(baseName => baseName is not null && !articlesByBaseName.ContainsKey(baseName));
-        foreach (var m in missing)
+        // 前提記事は本記事より易しい（orderが小さい）はず。逆転していたら記事側の設定ミスの可能性が高い
+        foreach (var p in prerequisites)
         {
-            Console.WriteLine($"  [警告] {article.FileBaseName}: 関連記事 '{m}' が見つかりません");
+            var target = articlesByBaseName[p.FileBaseName];
+            if (target.Order >= article.Order)
+            {
+                Console.WriteLine($"  [警告] {article.FileBaseName} (order {article.Order}): 前提記事 '{p.FileBaseName}' の order ({target.Order}) が同じか大きいです");
+            }
         }
 
         var bodyHtml = Markdown.ToHtml(article.BodyMarkdown, markdownPipeline);
@@ -117,6 +120,8 @@ foreach (var dir in Directory.GetDirectories(pagesDir).OrderBy(d => d, StringCom
             Category = article.Category,
             Order = article.Order,
             BodyHtml = new HtmlString(bodyHtml),
+            Prerequisites = prerequisites,
+            NextArticles = next,
             RelatedArticles = related,
         };
 
@@ -124,7 +129,7 @@ foreach (var dir in Directory.GetDirectories(pagesDir).OrderBy(d => d, StringCom
         var html = HtmlShell.Wrap(article.Title, content, depth: 1);
         File.WriteAllText(Path.Combine(outDir, $"{article.FileBaseName}.html"), html);
 
-        var markdownOut = BuildArticleMarkdown(article, related, yamlSerializer);
+        var markdownOut = BuildArticleMarkdown(article, prerequisites, next, related, yamlSerializer);
         File.WriteAllText(Path.Combine(outDir, $"{article.FileBaseName}.md"), markdownOut);
     }
 
@@ -218,31 +223,95 @@ static (FrontMatter FrontMatter, string Body) ParseFrontMatter(string text, IDes
     return (frontMatter, body);
 }
 
-static string BuildArticleMarkdown(ArticleDocument article, IReadOnlyList<ArticleLink> related, ISerializer yamlSerializer)
+/// <summary>
+/// frontmatterに書かれた他記事への参照を、同一ディレクトリ内の記事に解決する。
+/// 見つからない参照は警告を出してスキップする（ビルドは止めない）。
+/// </summary>
+static List<ArticleLink> ResolveReferences(
+    ArticleDocument article,
+    IEnumerable<(string File, string? Note)> references,
+    string kind,
+    IReadOnlyDictionary<string, ArticleDocument> articlesByBaseName)
 {
+    var result = new List<ArticleLink>();
+    foreach (var (file, note) in references)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(file);
+        if (string.IsNullOrWhiteSpace(baseName))
+        {
+            Console.WriteLine($"  [警告] {article.FileBaseName}: {kind} にファイル名が空の項目があります");
+            continue;
+        }
+
+        if (articlesByBaseName.TryGetValue(baseName, out var target))
+        {
+            result.Add(new ArticleLink { Title = target.Title, FileBaseName = target.FileBaseName, Note = note });
+        }
+        else
+        {
+            Console.WriteLine($"  [警告] {article.FileBaseName}: {kind} '{baseName}' が見つかりません");
+        }
+    }
+    return result;
+}
+
+static string BuildArticleMarkdown(
+    ArticleDocument article,
+    IReadOnlyList<ArticleLink> prerequisites,
+    IReadOnlyList<ArticleLink> next,
+    IReadOnlyList<ArticleLink> related,
+    ISerializer yamlSerializer)
+{
+    // 解決できた参照だけをfrontmatterに書き戻す（欠けているリンクをAI向け出力に残さない）
     var frontMatter = new FrontMatter
     {
         Title = article.Title,
         Category = article.Category,
         Order = article.Order,
+        Prerequisites = prerequisites.Select(r => new ArticleReference { File = $"{r.FileBaseName}.md", Note = r.Note }).ToList(),
+        Next = next.Select(r => new ArticleReference { File = $"{r.FileBaseName}.md", Note = r.Note }).ToList(),
         Related = related.Select(r => $"{r.FileBaseName}.md").ToList(),
     };
     var yaml = yamlSerializer.Serialize(frontMatter).TrimEnd('\n');
 
     var sb = new System.Text.StringBuilder();
     sb.Append("---\n").Append(yaml).Append("\n---\n\n");
+
+    if (prerequisites.Count > 0)
+    {
+        sb.Append("## 前提知識\n\n");
+        AppendLinkList(sb, prerequisites);
+        sb.Append('\n');
+    }
+
     sb.Append(article.BodyMarkdown.TrimEnd('\n')).Append('\n');
+
+    if (next.Count > 0)
+    {
+        sb.Append("\n## 次に読む\n\n");
+        AppendLinkList(sb, next);
+    }
 
     if (related.Count > 0)
     {
         sb.Append("\n## 関連記事\n\n");
-        foreach (var r in related)
-        {
-            sb.Append($"- [{r.Title}]({r.FileBaseName}.md)\n");
-        }
+        AppendLinkList(sb, related);
     }
 
     return sb.ToString();
+
+    static void AppendLinkList(System.Text.StringBuilder sb, IReadOnlyList<ArticleLink> links)
+    {
+        foreach (var l in links)
+        {
+            sb.Append($"- [{l.Title}]({l.FileBaseName}.md)");
+            if (!string.IsNullOrWhiteSpace(l.Note))
+            {
+                sb.Append(" … ").Append(l.Note);
+            }
+            sb.Append('\n');
+        }
+    }
 }
 
 static string BuildDirIndexMarkdown(string dirTitle, IReadOnlyList<CategoryGroup> categories)

@@ -36,10 +36,12 @@ public sealed class DirIndexViewModel
     public required IReadOnlyList<CategoryGroup> Categories { get; init; }
 }
 
+/// <summary>解決済みの他記事へのリンク。Note は前提・次に読む記事に付く一言（無ければ null）。</summary>
 public sealed class ArticleLink
 {
     public required string Title { get; init; }
     public required string FileBaseName { get; init; }
+    public string? Note { get; init; }
 }
 
 public sealed class ArticleViewModel
@@ -51,5 +53,13 @@ public sealed class ArticleViewModel
     public string Stars => Difficulty.StarsOf(Order);
     public string Label => Difficulty.LabelOf(Order);
     public required IHtmlContent BodyHtml { get; init; }
+
+    /// <summary>本文の前に表示する前提記事。</summary>
+    public required IReadOnlyList<ArticleLink> Prerequisites { get; init; }
+
+    /// <summary>本文の後に表示する、次に読む記事。</summary>
+    public required IReadOnlyList<ArticleLink> NextArticles { get; init; }
+
+    /// <summary>本文の後に表示する関連記事。</summary>
     public required IReadOnlyList<ArticleLink> RelatedArticles { get; init; }
 }

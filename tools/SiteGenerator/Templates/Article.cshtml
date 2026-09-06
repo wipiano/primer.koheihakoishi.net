@@ -5,9 +5,46 @@
     <span class="category-badge">@Model.Category</span>
     <span class="difficulty" title="難易度: @Model.Label">難易度: @Model.Stars（@Model.Label）</span>
 </p>
+@if (Model.Prerequisites.Count > 0)
+{
+    <section class="prerequisites">
+        <h2>前提知識</h2>
+        <p class="lead">先にこちらを読んでおくと、この記事がすらすら読めます。</p>
+        <ul>
+        @foreach (var p in Model.Prerequisites)
+        {
+            <li>
+                <a href="@(p.FileBaseName).html">@p.Title</a>
+                @if (!string.IsNullOrWhiteSpace(p.Note))
+                {
+                    <span class="note">… @p.Note</span>
+                }
+            </li>
+        }
+        </ul>
+    </section>
+}
 <div class="content">
 @Model.BodyHtml
 </div>
+@if (Model.NextArticles.Count > 0)
+{
+    <section class="next">
+        <h2>次に読む</h2>
+        <ul>
+        @foreach (var n in Model.NextArticles)
+        {
+            <li>
+                <a href="@(n.FileBaseName).html">@n.Title</a>
+                @if (!string.IsNullOrWhiteSpace(n.Note))
+                {
+                    <span class="note">… @n.Note</span>
+                }
+            </li>
+        }
+        </ul>
+    </section>
+}
 @if (Model.RelatedArticles.Count > 0)
 {
     <section class="related">

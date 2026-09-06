@@ -48,8 +48,37 @@ ul.article-list li {
   border-bottom: 1px dashed #8884;
 }
 
-section.related ul {
+section.related ul,
+section.next ul,
+section.prerequisites ul {
   padding-left: 1.2rem;
+}
+
+/* 前提知識は本文の前に出るので、本文と区別できるよう薄い枠で囲う */
+section.prerequisites {
+  margin: 1.5rem 0;
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #8886;
+  border-radius: 0.5rem;
+  background: #8881;
+}
+
+section.prerequisites h2,
+section.next h2,
+section.related h2 {
+  font-size: 1.1rem;
+  margin: 0.4rem 0;
+}
+
+section.prerequisites .lead {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.note {
+  font-size: 0.9rem;
+  opacity: 0.8;
 }
 
 pre code.hljs {

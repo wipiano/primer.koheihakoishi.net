@@ -15,6 +15,12 @@ public sealed class ArticleDocument
     public required string Category { get; init; }
     public required int Order { get; init; }
 
+    /// <summary>frontmatterに書かれた前提記事（ファイル名 + 一言）。</summary>
+    public required IReadOnlyList<ArticleReference> Prerequisites { get; init; }
+
+    /// <summary>frontmatterに書かれた次に読む記事（ファイル名 + 一言）。</summary>
+    public required IReadOnlyList<ArticleReference> Next { get; init; }
+
     /// <summary>frontmatterに書かれた関連記事のファイル名（拡張子付き、例: "struct-basic.md"）。</summary>
     public required IReadOnlyList<string> RelatedFileNames { get; init; }
 

@@ -43,7 +43,27 @@ dotnet run --project tools/SiteGenerator -- --pages ./pages --out ./dist
 ### 記事を追加する
 
 `pages/<ジャンル>/*.md` にfrontmatter付きMarkdownを追加するだけでよい（C#記事は
-`pages/csharp/.claude/skills/csharp-article/` のskillで生成する運用）。新しいジャンルの
+`pages/csharp/.claude/skills/csharp-article/` のskillで生成する運用）。
+
+frontmatterのキーは次の6つ。記事同士のリンクはすべてfrontmatterで表現し、本文中には書かない
+（ジェネレータはMarkdown本文中のリンクを解決しないため）。
+
+```yaml
+title: "記事タイトル"
+category: "文法"          # ディレクトリ内の目次でグループ化するカテゴリ名
+order: 24                 # 1〜100。難易度と目次内の並び順
+prerequisites:            # 先に読んでおくとよい記事。本文の前に「前提知識」として表示される
+  - file: class-basic.md
+    note: クラスと参照型の基本が分かっていれば十分です
+next:                     # 次に読むとよい記事。本文の後に「次に読む」として表示される
+  - file: readonly-struct.md
+    note: structを不変にして安全に使う方法
+related:                  # 前提でも次でもない関連記事。本文の後に「関連記事」として表示される
+  - equality.md
+```
+
+`prerequisites` / `next` / `related` の参照先が同じディレクトリに見つからない場合、
+および前提記事の `order` が本記事以上の場合は、生成時に警告を出す（ビルドは止めない）。新しいジャンルの
 ディレクトリを追加した場合は、そのディレクトリ直下に `_directory.yml` を置いてタイトルを指定する:
 
 ```yaml
