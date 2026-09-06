@@ -15,29 +15,30 @@ related:
   - access-modifiers-basic.md
 ---
 
-`class`は、ひとつの概念に含まれるデータとメソッド（振る舞い）をまとめて1つの型として定義するキーワードだ。
+`class`は、データと振る舞い(メソッド)をまとめ、1つの概念を表すオブジェクトの設計図を定義するキーワードだ。
 
-- データの置き場所をプロパティ、初期化処理をコンストラクタとして持たせる
-- 「商品」のように名前を付けられる概念を、1つの型として扱えるようにする
+- 「商品」のように名前を付けられる概念を見つけ出し、そのデータと振る舞いをひとまとまりのオブジェクトとして表現する
+- オブジェクト自身にルールを守らせたり、複雑な振る舞いを安全に記述できる
+- 同じ`class`から作った実体(インスタンス)は、それぞれ別の値を持てる
 
 ## なぜ必要か
 
-商品名・価格のようなセットで扱うデータを別々の変数で持ち歩くと、メソッドに渡す順番を間違えるミスが起きやすい。`class`でひとまとめにすれば、渡すのは1つの値だけで済む。
+商品名や価格をバラバラの変数で持ち歩くと、それらが「商品」という一つの概念であることも、それをどう安全に扱うかということも、コードのどこにも書き表せない。`class`でオブジェクトとしてまとめれば、名前を与えたうえで、扱い方(振る舞い)そのものをオブジェクトに持たせられる。
 
 ここでは基本として、外部に公開されるプロパティとコンストラクタのみを定義した`Product`クラスについて考える。
 
 ## 動かしてみる
 
 ```csharp
-var product = new Product("コーヒー", 480);
-Console.WriteLine($"{product.Name}: {product.Price}円");
+var product = new Product("コーヒー", 480); // コンストラクタが呼ばれてインスタンスができる
+Console.WriteLine($"{product.Name}: {product.Price}円"); // ドットでつないで値を読み書きする
 
 public class Product
 {
-    public string Name { get; }
-    public decimal Price { get; set; }
+    public string Name { get; } // プロパティ
+    public decimal Price { get; set; } // プロパティ
 
-    public Product(string name, decimal price)
+    public Product(string name, decimal price) // コンストラクタ
     {
         Name = name;
         Price = price;
@@ -48,8 +49,6 @@ public class Product
 ```
 コーヒー: 480円
 ```
-
-`public class Product`の中の`Name`と`Price`がプロパティ、`Product(string name, decimal price)`がコンストラクタだ。`new Product("コーヒー", 480)`と書いた時点でコンストラクタが呼ばれ、`Name`と`Price`に値が設定されたインスタンスができる。以後は`product.Name`のようにドットでつないで値を読み書きする。
 
 コンストラクタを自分で書かなければ、C#は何もしない引数なしのコンストラクタを自動的に用意する。その場合は`new Product()`のように書け、プロパティは`{ get; set; }`にしてあとから代入することになる。
 
