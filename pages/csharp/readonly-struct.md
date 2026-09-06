@@ -25,7 +25,7 @@ related:
 - `readonly struct`ではすべてのプロパティを`get`のみ（またはinit）にする必要があり、フィールドの直接変更は不可
 - 通常のstructを`in`パラメータ経由で使うと、コンパイラは「本当に変更されないか」を保証できず、暗黙のコピー（防御的コピー）を作ることがある
 - readonly structと明示すると、コンパイラは防御的コピーを省略できる
-- メソッド自体を`readonly`にすることも可能（そのメソッドが構造体を変更しないことを保証する）
+- メソッド自体を`readonly`にすることも可能（そのメソッドがstructを変更しないことを保証する）
 
 ## 基本的な書き方とコード例
 
@@ -88,7 +88,7 @@ public readonly struct Point
   - `readonly`修飾なしのstructを`in`パラメータで渡しても、変更されない保証はコンパイラには無い
 
 ```csharp
-// NG: readonly構造体だと思い込み、in渡しの最適化を期待する
+// NG: readonly structだと思い込み、in渡しの最適化を期待する
 public struct Point { public int X { get; set; } }
 void Show(in Point p) { /* コンパイラは変更可能性を排除できず防御的コピーが発生しうる */ }
 ```

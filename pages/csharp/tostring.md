@@ -98,7 +98,7 @@ public override string ToString() => $"{Name} (Id={Id})";
 ## 理解度チェックリスト
 
 - [ ] ToStringがいつ暗黙的に呼ばれるかを説明できる
-- [ ] classでToStringをオーバーライドできる
+- [ ] クラスでToStringをオーバーライドできる
 - [ ] recordの自動生成ToStringの出力形式を説明できる
 - [ ] ToStringに機密情報を含めてはいけない理由を説明できる
 - [ ] ToStringに重い処理を書いてはいけない理由を説明できる

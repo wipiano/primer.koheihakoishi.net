@@ -31,7 +31,7 @@ related:
 
 ## 基本的な書き方とコード例
 
-- 最小の実装（class）
+- 最小の実装（クラス）
 
 ```csharp
 public class Money : IEquatable<Money>
@@ -57,7 +57,7 @@ Console.WriteLine(a == b); // True（==も自動生成される）
 
 - 使い分けの判断基準
   - 値の一致で比較したい単純なデータはrecordに任せて自前実装を避ける
-  - 既存のclass階層に等価性だけ追加したい場合はIEquatable\<T\>を手動実装する
+  - 既存のクラス階層に等価性だけ追加したい場合はIEquatable\<T\>を手動実装する
 
 ## よくある誤用・バグ
 
