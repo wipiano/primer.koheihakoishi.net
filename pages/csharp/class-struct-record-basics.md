@@ -15,7 +15,13 @@ related:
   - equality.md
 ---
 
-`class` / `struct` / `record` はどれも独自の型を定義するキーワードだが、代入したときの挙動・`==`の既定・書き換え可否がそれぞれ違う。`struct`が値型としてコピーされる仕組みは「構造体(struct)の基本」、`record`の値等価と`with`式は「レコード(record)の基本」で説明した通りなので、ここでは3つを並べて比較し、使い分けの判断基準だけを扱う。
+`class` / `struct` / `record` はどれも独自の型を定義するキーワードだが、表している概念の種類が違う。
+
+- `class`: 同一性を持ち、生成後に状態が変わっていくもの。実体は1つで、変数はそれを指す
+- `struct`: 座標や金額のような値そのもの。代入のたびにコピーされる
+- `record`: 中身の値が意味のすべてであるデータ。中身が同じなら同じものとして扱う
+
+個々の仕組みは「構造体(struct)の基本」「レコード(record)の基本」で説明した通りなので、ここでは3つを並べて比較し、使い分けの判断基準だけを扱う。
 
 | 観点 | `class` | `struct` | `record` |
 |---|---|---|---|
@@ -27,21 +33,21 @@ related:
 
 ```csharp
 var c1 = new PointClass { X = 1, Y = 1 };
-var c2 = c1;
-c2.X = 100;
+var c2 = c1;                 // 同じ実体を指す
+c2.X = 100;                  // c1.Xも100になる
 Console.WriteLine(c1.X);
-Console.WriteLine(c1 == c2);
+Console.WriteLine(c1 == c2); // 参照等価。同じ実体なのでTrue
 
 var s1 = new PointStruct { X = 1, Y = 1 };
-var s2 = s1;
-s2.X = 100;
+var s2 = s1;                 // 値がコピーされる
+s2.X = 100;                  // s1.Xは1のまま
 Console.WriteLine(s1.X);
-Console.WriteLine(s1.Equals(s2));
+Console.WriteLine(s1.Equals(s2)); // structは==を既定で持たないのでEqualsで比較
 
 var r1 = new PointRecord(1, 1);
-var r2 = r1 with { X = 100 };
+var r2 = r1 with { X = 100 }; // recordは書き換えられないので、withで新しいインスタンスを作る
 Console.WriteLine(r1.X);
-Console.WriteLine(r1 == r2);
+Console.WriteLine(r1 == r2);  // 値等価。Xが違うのでFalse
 
 public class PointClass
 {
@@ -66,8 +72,6 @@ False
 1
 False
 ```
-
-`c2`は`c1`と同じ実体を指すので、`c2.X`を変えると`c1.X`も100になり、`==`も参照等価でtrueになる。`s2`は`s1`の値をコピーして作られるため書き換えても`s1`は1のままだが、`struct`は`==`演算子を既定で持たないので値の比較には`Equals`を使う。`record`のプロパティは既定で`init`専用のため直接書き換えられず、`with`で新しいインスタンスを作る。値が異なる`r1`と`r2`を比較すると、`record`の`==`は値等価なのでfalseになる。
 
 ## 最低限の理解
 

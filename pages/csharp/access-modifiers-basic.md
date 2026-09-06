@@ -18,19 +18,19 @@ related: []
 
 ## なぜ必要か
 
-プロパティをすべて`public`にすると、外部のコードがどこからでも自由に書き換えられ、想定していない値が入り込むのを止められない。`private`で触れる範囲を狭めれば、値を変えてよい経路をクラス自身に決めさせられる。
+「価格はマイナスにならない」のようなルールを守る責任は、その値を持つオブジェクト自身にある。ところがプロパティがすべて`public`だと、どこからでも書き換えられ、オブジェクトは自分の状態に責任を持てない。`private`で触れる範囲を型自身が決めることで、値を変えてよい経路をオブジェクトの内側に集められる。
 
 ## 動かしてみる
 
 ```csharp
 var product = new Product("コーヒー", 480);
-product.ApplyDiscount(100);
+product.ApplyDiscount(100); // 値を変える経路はこのメソッドだけ
 Console.WriteLine(product.Price);
 
 public class Product
 {
     public string Name { get; }
-    public decimal Price { get; private set; }
+    public decimal Price { get; private set; } // 読み取りは外から、書き込みはクラス内部だけ
 
     public Product(string name, decimal price)
     {
@@ -40,7 +40,7 @@ public class Product
 
     public void ApplyDiscount(decimal amount)
     {
-        if (amount > Price) return;
+        if (amount > Price) return; // 経路がここだけなので、このチェックを素通りできない
         Price -= amount;
     }
 }
@@ -50,13 +50,12 @@ public class Product
 380
 ```
 
-`Price`の`set`アクセサに`private`が付いているので、値を変えられるのはクラスの内部だけになる。外から値を変えたいときは`ApplyDiscount`のようなメソッドを必ず経由することになり、そのメソッドの中でだけ「割引後の金額がマイナスにならない」というチェックを効かせられる。
-
 ## 最低限の理解
 
 - 修飾子を何も書かないクラスのメンバーは、既定で`private`になる
 - `{ get; }`だけにすると生成後は一切変更できない。`{ get; private set; }`にすると、読み取りは外部から自由だが書き込みはクラス内部のメソッド経由に絞れる
 - フィールドは基本`private`にし、外部に見せたい値だけプロパティとして`public`で公開する
+- 迷ったら`private`から始める。後から`public`に広げるのは簡単だが、狭めるのは使っている箇所すべてに影響する
 - **`private`にしたメンバーは、そのクラスの中でしか名前で呼べない**。外部からは存在しないものとして扱われる
 
 ## ⚠️ setがpublicのままだと検証をすり抜ける

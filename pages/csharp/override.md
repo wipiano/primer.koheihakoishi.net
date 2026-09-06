@@ -15,30 +15,36 @@ next:
 related: []
 ---
 
-継承(けいしょう)は、あるクラスの機能を引き継いで新しいクラスを作ることだ。継承元のクラスを基底クラス、継承して作った新しいクラスを派生クラスと呼ぶ。`virtual`は基底クラスのメソッドに付けて「派生クラスで上書きしてよい」と宣言するキーワードで、`override`は派生クラス側で実際に上書きするキーワードだ。
+`virtual`と`override`は、基底クラスのメソッドの振る舞いを、派生クラスで差し替えるためのキーワードだ。
+
+- 継承(あるクラスの機能を引き継いで新しいクラスを作ること)が前提。引き継ぐ元を基底クラス、引き継いだ側を派生クラスと呼ぶ
+- `virtual`は基底クラス側で「このメソッドは差し替えてよい」と宣言する
+- `override`は派生クラス側で実際に差し替える
+
+## なぜ必要か
+
+「従業員の説明を出せ」という呼びかけは1種類でも、実際の説明はマネージャーと一般社員で違う。呼び出す側がその違いを`if`で分けると、種類が増えるたびに呼び出す側を書き換えることになる。`virtual`/`override`は、呼びかけ方を基底クラスで1つに決め、実際の振る舞いは実体の型に任せる仕組みだ。
 
 ## 動かしてみる
 
 ```csharp
-Employee employee = new Manager();
-Console.WriteLine(employee.Describe());
+Employee employee = new Manager(); // 変数の型は Employee、実体は Manager
+Console.WriteLine(employee.Describe()); // 実体である Manager の実装が呼ばれる
 
 public class Employee
 {
-    public virtual string Describe() => "従業員";
+    public virtual string Describe() => "従業員"; // 差し替えてよい印
 }
 
 public class Manager : Employee
 {
-    public override string Describe() => base.Describe() + "(マネージャー)";
+    public override string Describe() => base.Describe() + "(マネージャー)"; // base.〜 で差し替え前の実装を呼べる
 }
 ```
 
 ```
 従業員(マネージャー)
 ```
-
-`employee`変数は`Employee`型で宣言しているが、実際に`new`しているのは`Manager`だ。`Describe()`を呼び出すと、変数の宣言型ではなく、実際に生成したインスタンスの型である`Manager`の`override`済みの実装が実行される。`Manager`の`override`の中では`base.Describe()`と書くことで、上書きする前の`Employee`の実装も呼び出している。
 
 ## 最低限の理解
 
@@ -49,12 +55,12 @@ public class Manager : Employee
 
 ## ⚠️ overrideを付け忘れる
 
-`override`を書かずに派生クラスへ同名のメソッドを定義すると、基底クラスのメソッドとは別物の新しいメソッドとして扱われる。これを隠蔽と呼ぶ。ビルドは通るが「override キーワードを追加してください」という警告(CS0114)が出て、呼び出し結果が変数の宣言型によって変わってしまう。
+`override`を書かずに派生クラスへ同名のメソッドを定義すると、基底クラスのメソッドとは別物の新しいメソッドとして扱われる。これを隠蔽と呼ぶ。ビルドは通るが警告(CS0114)が出て、呼び出し結果が変数の宣言型で決まってしまう。
 
 ```csharp
 // NG: overrideを書き忘れると、基底クラスのメソッドとは別物として隠蔽される
 Member member = new PremiumMember();
-Console.WriteLine(member.GetDiscountRate());
+Console.WriteLine(member.GetDiscountRate()); // 宣言型 Member 側の実装が呼ばれる
 
 public class Member
 {
@@ -63,15 +69,13 @@ public class Member
 
 public class PremiumMember : Member
 {
-    public double GetDiscountRate() => 0.1;
+    public double GetDiscountRate() => 0.1; // 警告が出るだけで、差し替えにはならない
 }
 ```
 
 ```
 0
 ```
-
-`member`変数の宣言型は`Member`なので、呼ばれるのは`Member`側の`GetDiscountRate()`であり0が出力される。`PremiumMember`に定義した`GetDiscountRate()`は、警告が出るだけで上書きにはならない。
 
 ```csharp
 // OK: overrideを付けて実際に上書きする
@@ -103,7 +107,7 @@ var manager = new Manager();
 
 public class Employee
 {
-    public Employee() => Describe();
+    public Employee() => Describe(); // 派生クラスの Describe が呼ばれる
     public virtual void Describe() => Console.WriteLine("従業員");
 }
 
@@ -112,17 +116,15 @@ public class Manager : Employee
     private string _department;
     public Manager()
     {
-        _department = "営業部";
+        _department = "営業部"; // Describe が呼ばれた時点では、まだここに来ていない
     }
-    public override void Describe() => Console.WriteLine(_department);
+    public override void Describe() => Console.WriteLine(_department); // 空のまま出力される
 }
 ```
 
 ```
 
 ```
-
-`Manager`を生成すると、まず基底クラスである`Employee`のコンストラクタが実行され、その中で`Describe()`が呼ばれる。この時点では`Manager`自身のコンストラクタ本体はまだ実行されておらず、`_department`への代入も済んでいないため、空の値のまま出力される。
 
 ```csharp
 // OK: コンストラクタからvirtualメソッドを呼ばず、生成が終わってから呼び出す

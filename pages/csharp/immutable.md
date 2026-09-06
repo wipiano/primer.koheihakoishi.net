@@ -14,22 +14,26 @@ related:
 
 イミュータブル(不変)とは、一度生成したインスタンスの状態を、その後変更できないようにする設計方針だ。
 
+- 値を変える操作は、既存のインスタンスを書き換えず、新しいインスタンスを返す
+- `init`・`readonly`・`record`を使い、生成後の書き換えをコンパイルエラーにする
+- いつ誰が読んでも同じ意味を持つので、複数の箇所から共有しても安全
+
 ## なぜ必要か
 
-同じインスタンスを複数の箇所で共有していると、どこかで値を書き換えたときに、その影響が他の箇所にまで及ぶ。原因を1行ずつ追わないと、どこで値が変わったか分からなくなる。イミュータブルにしておけば生成後は値が変わらないと保証できるので、この追跡が要らなくなる。
+1000円という金額は、あとで900円に「変わる」ものではなく、900円は別の値だ。オブジェクトを不変にするとは、それを移り変わる状態ではなく、値として扱うと宣言することだ。値は生成した時点で意味が確定するので、どこで共有されようと、誰かに書き換えられた可能性を考えずに読める。
 
 ## 動かしてみる
 
 ```csharp
 var price = new Money(1000m);
-var discounted = price.Add(-100m);
+var discounted = price.Add(-100m); // priceは変わらず、新しいMoneyが返る
 
 Console.WriteLine(price.Amount);
 Console.WriteLine(discounted.Amount);
 
 public record Money(decimal Amount)
 {
-    public Money Add(decimal amount) => this with { Amount = Amount + amount };
+    public Money Add(decimal amount) => this with { Amount = Amount + amount }; // thisは書き換えない
 }
 ```
 
@@ -38,7 +42,7 @@ public record Money(decimal Amount)
 900
 ```
 
-`Add`は`this`を書き換えず、`with`式(『レコード(record)の基本』で説明した、一部のプロパティだけ変えた新しいインスタンスを作る構文)で`Amount`だけ変えた新しい`Money`を返す。だから`price`は`Add`を呼んだ後も`1000`のままで、`price`を持っている別のコードには影響しない。「値を変えたい操作は、新しいインスタンスを返す」という形が、イミュータブル設計の基本パターンだ。
+`with`式(『レコード(record)の基本』で説明した、一部のプロパティだけ変えた新しいインスタンスを作る構文)を使うと、この形を1行で書ける。**値を変えたい操作は、新しいインスタンスを返す。**これがイミュータブル設計の基本パターンだ。
 
 ## 最低限の理解
 
@@ -55,7 +59,7 @@ public record Money(decimal Amount)
 ```csharp
 // NG: プロパティはinitだが、Listの中身は外から変更できる
 var cart = new Cart(new List<string> { "apple" });
-cart.Items.Add("banana");
+cart.Items.Add("banana"); // Itemsの差し替えは不可だが、中身への追加は通る
 
 Console.WriteLine(cart.Items.Count);
 
@@ -88,7 +92,7 @@ using System.Collections.Immutable;
 
 var items = ImmutableList.Create("apple");
 var cart = new Cart(items);
-var updated = items.Add("banana");
+var updated = items.Add("banana"); // itemsは変わらず、要素が増えた別のリストが返る
 
 Console.WriteLine(cart.Items.Count);
 Console.WriteLine(updated.Count);

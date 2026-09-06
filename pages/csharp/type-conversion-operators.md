@@ -16,13 +16,13 @@ related: []
 
 ## なぜ必要か
 
-`Money`のような独自の型を`decimal`に変換したい場面は多いが、既定では変換方法をコンパイラは知らない。変換演算子を定義すれば、キャストの書き方で型を行き来できるようになる。
+`Money`と`decimal`のように、独自の型が既存の型と同じ量を表していることがある。変換演算子は、その対応関係を型自身に定義するものだ。変換が常に安全なのか(`implicit`)、読み手に注意を促すべきなのか(`explicit`)を決めるのも、型を作る側の責任になる。
 
 ## 動かしてみる
 
 ```csharp
 var price = new Money(1980m);
-decimal amount = (decimal)price;
+decimal amount = (decimal)price; // explicitなので、キャストを書いて初めて変換される
 Console.WriteLine(amount);
 
 public class Money
@@ -34,7 +34,7 @@ public class Money
         Amount = amount;
     }
 
-    public static explicit operator decimal(Money money) => money.Amount;
+    public static explicit operator decimal(Money money) => money.Amount; // Moneyからdecimalへの変換方法
 }
 ```
 
@@ -42,7 +42,7 @@ public class Money
 1980
 ```
 
-`static explicit operator decimal(Money money)`が、`Money`から`decimal`への変換方法を定義する。呼び出す側は`(decimal)price`とキャストを書いて初めて変換が実行される。`explicit`なので、キャストを書き忘れるとコンパイルエラーになり、意図しない箇所での変換を防げる。
+逆方向の`decimal`から`Money`への変換も、戻り値の型を`Money`にして同じ形で定義できる。キャストを書き忘れるとコンパイルエラーになるので、変換が起きる場所はコード上で必ず見える。
 
 ## 最低限の理解
 
@@ -55,7 +55,7 @@ public class Money
 
 ```csharp
 // NG: implicit にすると数値をそのまま渡すだけで Money に化けてしまう
-PrintReceipt(1980);
+PrintReceipt(1980); // new Moneyがどこにも無いのに、Moneyとして渡っている
 
 void PrintReceipt(Money price) => Console.WriteLine(price.Amount);
 
@@ -76,7 +76,7 @@ public class Money
 1980
 ```
 
-動くには動くが、`PrintReceipt(1980)`だけを読んでも、`Money`を渡しているのか`decimal`を渡しているのかコード上から読み取れない。`new Money(...)`がどこにも書かれないまま値が`Money`として扱われてしまう。
+動くには動くが、`PrintReceipt(1980)`だけを読んでも、`Money`を渡しているのか`decimal`を渡しているのかコード上から読み取れない。
 
 ```csharp
 // OK: 変換演算子を持たせず、new で明示的に作らせる

@@ -18,14 +18,14 @@ related: []
 
 ## なぜ必要か
 
-座標や金額のように「足し合わせる」意味を持つ型でも、既定では`+`は使えずコンパイルエラーになる。演算子を定義すれば、プロパティを1つずつ取り出して足すコードを書かずに済む。
+金額や座標は、`int`と同じように「足せる」「等しいか比べられる」という意味を本来持つ概念だ。演算子を定義するとは、その意味を型自身に持たせ、組み込みの型と同じ語彙で扱えるようにすることだ。定義しなければ、`Point`同士の`+`はコンパイルエラーになる。
 
 ## 動かしてみる
 
 ```csharp
 var p1 = new Point(1, 2);
 var p2 = new Point(3, 4);
-var sum = p1 + p2;
+var sum = p1 + p2; // コンパイラが下のoperator +を呼び出す
 
 Console.WriteLine($"({sum.X}, {sum.Y})");
 
@@ -40,7 +40,7 @@ public class Point
         Y = y;
     }
 
-    public static Point operator +(Point a, Point b) => new Point(a.X + b.X, a.Y + b.Y);
+    public static Point operator +(Point a, Point b) => new Point(a.X + b.X, a.Y + b.Y); // 2つのPointから新しいPointを返す
 }
 ```
 
@@ -48,7 +48,7 @@ public class Point
 (4, 6)
 ```
 
-`operator +`は、2つの`Point`を受け取り新しい`Point`を返す`public static`なメソッドとして定義する。`p1 + p2`と書くと、コンパイラはこの`operator +`を呼び出す。呼び出す側から見ると、`int`同士を足すのと同じ書き方に見える。
+`p1`も`p2`も書き換えず、結果は新しいインスタンスとして返す。組み込みの`int`の`+`と同じ振る舞いにそろえるのが基本だ。
 
 ## 最低限の理解
 
@@ -103,7 +103,7 @@ public class Point
     }
 
     public static bool operator ==(Point a, Point b) => a.X == b.X && a.Y == b.Y;
-    public static bool operator !=(Point a, Point b) => !(a == b);
+    public static bool operator !=(Point a, Point b) => !(a == b); // ==の否定として定義すれば矛盾しない
 }
 ```
 

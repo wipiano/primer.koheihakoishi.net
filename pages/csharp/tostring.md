@@ -11,15 +11,21 @@ next:
 related: []
 ---
 
-`ToString`は、インスタンスの中身を1つの文字列にして返すメソッドで、既定の動作を`override`で書き換えて使う。
+`ToString`は、インスタンスを人が読める1つの文字列で表すメソッドだ。すべての型が持っており、既定の動作を`override`で書き換えて使う。
+
+- 「この型を文字で表すならこう」という表現を、型自身に持たせる
+- `Console.WriteLine`や文字列補間は、渡されたものの`ToString`を暗黙に呼ぶ
+- 何も書き換えなければ、型の名前を返すだけ
+
+## なぜ必要か
+
+インスタンスを画面やログに出すとき、どのプロパティをどう並べれば人に伝わるかを知っているのは、その型自身だ。表示する側が毎回プロパティを取り出して組み立てると、同じ整形コードが型の外に散らばる。`ToString`に表現を持たせれば、表示側は中身を知らずに「文字にしてくれ」と頼むだけで済む。
 
 ## 動かしてみる
 
-何も書き換えない状態でクラスのインスタンスを`Console.WriteLine`に渡すと、中身は分からない。
-
 ```csharp
 var product = new Product { Name = "Coffee", Price = 480 };
-Console.WriteLine(product);
+Console.WriteLine(product); // 内部で product.ToString() が呼ばれる
 
 public class Product
 {
@@ -32,7 +38,7 @@ public class Product
 Product
 ```
 
-`Product`のプロパティは何も指定していないのに、既定の`ToString`は型の名前を返すだけになる。中身を見せたいなら`ToString`を書き換える。
+既定の`ToString`は型の名前を返すだけなので、中身は分からない。`override`(親から受け継いだメソッドを自分用に書き換える印。仕組みは『virtual/overrideの基本』で扱う)で表現を書き換える。
 
 ```csharp
 var product = new Product { Name = "Coffee", Price = 480 };
@@ -43,22 +49,20 @@ public class Product
     public string Name { get; init; } = "";
     public decimal Price { get; init; }
 
-    public override string ToString() => $"{Name} ({Price:C})";
+    public override string ToString() => $"{Name} {Price}円"; // この1行で表現を決める
 }
 ```
 
 ```
-Coffee (¥480)
+Coffee 480円
 ```
-
-`public override string ToString() => ...`という1行を追加しただけだ。`Console.WriteLine(product)`は内部で`product.ToString()`を呼び、その戻り値を表示している。`override`は、親から受け継いだメソッドを自分用に書き換える印で、仕組みは次の記事に譲る。`{Price:C}`は数値を通貨形式に整形する書き方だ。
 
 ## 最低限の理解
 
-- 何も書き換えなければ、`ToString`は型の名前を返すだけ
+- 上書きする`ToString`は`public override string ToString()`という形で書く。戻り値は必ず`string`
 - **`Console.WriteLine`だけでなく、文字列補間`$"{obj}"`や多くのログ出力ライブラリも、内部で暗黙に`ToString`を呼ぶ**
 - 呼ばれるタイミングを完全にはコントロールできないので、I/Oやデータベース呼び出しのような重い処理は書かない
-- 上書きする`ToString`は`public override string ToString()`という形で書く。戻り値は必ず`string`
+- 表示用の文字列を型の外で組み立てたくなったら、その整形は`ToString`に置けないか考える
 
 ## ⚠️ 機密情報を含めるとログに漏れる
 

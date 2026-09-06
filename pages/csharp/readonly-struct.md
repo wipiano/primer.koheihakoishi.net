@@ -12,11 +12,15 @@ related:
   - class-struct-record-basics.md
 ---
 
-`readonly struct`は、インスタンスを生成した後はすべてのフィールドとプロパティが変更できないことを、コンパイラが保証する`struct`だ。
+`readonly struct`は、生成した後はどのフィールドもプロパティも変更できないことを、コンパイラが保証する`struct`だ。
+
+- `set`を持つプロパティや書き換え可能なフィールドを1つでも含めるとコンパイルエラーになる
+- 値を変えたいときは、書き換えではなく新しい値を作って返す
+- 座標・金額・日付範囲のような小さな値を表す型は、まずこの形で定義する
 
 ## なぜ必要か
 
-`struct`は値型で、代入や引数渡しのたびに値がコピーされる(「構造体(struct)の基本」の通り)。ただし`struct`自体は既定では可変で、プロパティやフィールドを自由に書き換えられる。コピーされる性質と可変な中身が組み合わさると、どのコピーに変更が反映されたのか分からなくなる事故が起きやすい。`readonly struct`は「そもそも書き換えられない」という制約を型に付け、この事故を未然に防ぐ。
+値は「変わる」ものではなく「別の値になる」ものだ。1が2に変わるのではなく、1とは別の2という値がある。通常の`struct`は生成後の書き換えを許すためこの性質に反するが、`readonly struct`はこの性質を型に書き込み、コンパイラに守らせる。
 
 ## 定義してみる
 
@@ -24,15 +28,15 @@ related:
 var point = new Point(1, 2);
 Console.WriteLine($"X={point.X}, Y={point.Y}");
 
-public readonly struct Point
+public readonly struct Point // readonlyを付けると、メンバーはすべて読み取り専用でなければならない
 {
-    public Point(int x, int y)
+    public Point(int x, int y) // 値を設定できるのはコンストラクタの中だけ
     {
         X = x;
         Y = y;
     }
 
-    public int X { get; }
+    public int X { get; } // getのみ。setは書けない
     public int Y { get; }
 }
 ```
@@ -41,7 +45,7 @@ public readonly struct Point
 X=1, Y=2
 ```
 
-`struct`に`readonly`を付けると、`X`や`Y`のようなプロパティはすべて`get`専用にする必要があり、値はコンストラクタで一度設定した後は書き換えられない。通常の`struct`なら`public int X { get; set; }`のように`set`を書けるが、`readonly struct`の中で同じことをすると次のようにコンパイルエラーになる。
+通常の`struct`なら`public int X { get; set; }`と書けるが、`readonly struct`の中で同じことをするとコンパイルエラーになる。
 
 ```csharp
 // NG: readonly structにsetプロパティを混在させる

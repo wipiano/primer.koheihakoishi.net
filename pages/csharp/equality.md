@@ -16,20 +16,27 @@ related:
   - class-struct-record-basics.md
 ---
 
-`class`のインスタンスは既定では参照(メモリ上の場所)が同じかどうかで比較される。2つの変数が同じインスタンスを指しているかの判定を参照等価、プロパティの値がすべて一致しているかの判定を値等価と呼ぶ。
+等価性とは、ある型のインスタンス2つを「同じ」とみなす基準のことだ。`Equals`と`GetHashCode`は、その基準を型自身に書き込むメソッドだ。
 
-## 値が同じでも別物として扱われる
+- 同じインスタンスを指しているかで判定するのが参照等価。`class`の既定はこれ
+- プロパティの値がすべて一致するかで判定するのが値等価
+- `HashSet`や`Dictionary`は、この2つのメソッドを使って要素を探す
 
-DictionaryのキーやHashSetの要素に自分で定義した型を使うと、値が同じインスタンスなのに見つからないという問題が起きる。原因の多くは、`Equals`を上書きしていないために既定の参照等価のまま比較されていることにある。
+## なぜ必要か
+
+「何をもって同じとみなすか」は概念ごとに違う。注文は内容が同じでも別の注文だが、座標(1, 2)は誰が作っても同じ1つの点だ。中身が意味のすべてである型は、その基準を型に書かないかぎり、既定の参照等価で判定されてしまう。
+
+## 動かしてみる
+
+まず何も書かずに、値が同じ2つの`Point`を比べる。
 
 ```csharp
 var p1 = new Point(1, 2);
 var p2 = new Point(1, 2);
-
-Console.WriteLine(p1 == p2);
+Console.WriteLine(p1 == p2); // 既定は参照等価。別々にnewしたので等しくない
 
 var points = new HashSet<Point> { p1 };
-Console.WriteLine(points.Contains(p2));
+Console.WriteLine(points.Contains(p2)); // ContainsもEqualsで探すので見つからない
 
 public class Point
 {
@@ -49,20 +56,15 @@ False
 False
 ```
 
-p1とp2はXとYの値が完全に一致しているが、`==`はFalseを返す。`class`の`==`は既定で`Equals`と同じ参照等価の判定をするため、別々に`new`した時点で別物として扱われる。HashSetの`Contains`も内部で`Equals`を使って要素を探すので、同じ値のp2を渡しても見つからない。
-
-## 値で比較できるようにする
-
-値が同じなら同じとみなしたい型は、`IEquatable<T>`を実装したうえで`Equals(object)`と`GetHashCode`もオーバーライド(『virtual/overrideの基本』で説明した、基底クラスのメンバーを派生クラスで上書きする仕組み)する。`IEquatable<T>`は型安全な比較用のメソッドを約束するインターフェース(『インターフェースの基本』で説明した、実装すべきメンバーを型で約束する仕組み)だ。
+値で比較したい型は、`IEquatable<T>`を実装し、`Equals(object)`と`GetHashCode`をオーバーライド(『virtual/overrideの基本』で説明した、基底クラスのメンバーを派生クラスで上書きする仕組み)する。`IEquatable<T>`は、`object`ではなく自分の型を受け取る`Equals`を持つことを約束するインターフェース(『インターフェースの基本』で説明した、実装すべきメンバーを型で約束する仕組み)だ。
 
 ```csharp
 var p1 = new Point(1, 2);
 var p2 = new Point(1, 2);
-
 Console.WriteLine(p1.Equals(p2));
 
 var points = new HashSet<Point> { p1 };
-Console.WriteLine(points.Contains(p2));
+Console.WriteLine(points.Contains(p2)); // GetHashCodeで場所を絞り、Equalsで照合する
 
 public class Point : IEquatable<Point>
 {
@@ -75,9 +77,9 @@ public class Point : IEquatable<Point>
         Y = y;
     }
 
-    public bool Equals(Point? other) => other is not null && X == other.X && Y == other.Y;
-    public override bool Equals(object? obj) => Equals(obj as Point);
-    public override int GetHashCode() => HashCode.Combine(X, Y);
+    public bool Equals(Point? other) => other is not null && X == other.X && Y == other.Y; // 比較の本体
+    public override bool Equals(object? obj) => Equals(obj as Point); // objectで来ても本体に流す
+    public override int GetHashCode() => HashCode.Combine(X, Y); // Equalsと同じプロパティで計算する
 }
 ```
 
@@ -85,8 +87,6 @@ public class Point : IEquatable<Point>
 True
 True
 ```
-
-`Equals(Point)`はobjectへのキャストなしに比較できる型安全な版で、`Equals(object)`はそれを呼ぶだけにする。`GetHashCode`は`HashCode.Combine`に、`Equals`で比較しているのと同じプロパティを渡して計算する。HashSetはこのハッシュコードで探す場所を絞り込んでから`Equals`で照合するので、両方を正しく実装して初めて`Contains`が値で見つけられる。
 
 ## 最低限の理解
 
@@ -102,11 +102,10 @@ True
 // NG: Equalsだけオーバーライドし、GetHashCodeは既定のまま
 var p1 = new Point(1, 2);
 var p2 = new Point(1, 2);
-
 Console.WriteLine(p1.Equals(p2));
 
 var points = new HashSet<Point> { p1 };
-Console.WriteLine(points.Contains(p2));
+Console.WriteLine(points.Contains(p2)); // 参照ベースのハッシュコードで別の場所を調べてしまう
 
 public class Point
 {
@@ -129,8 +128,6 @@ warning CS0659: 'Point' は Object.Equals(object o) をオーバーライドし�
 True
 False
 ```
-
-`p1.Equals(p2)`はTrueなのに、同じ値のp2を`Contains`で調べるとFalseになる。`GetHashCode`が既定の参照ベースのままなので、p1とp2は別のハッシュコードを持ち、HashSetは違う場所を調べてしまう。
 
 ```csharp
 // OK: Equalsと同じプロパティでGetHashCodeもセットで実装する

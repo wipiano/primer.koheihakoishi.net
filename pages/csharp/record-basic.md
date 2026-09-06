@@ -16,24 +16,25 @@ related:
   - tostring.md
 ---
 
-`record`は、単純なデータ型を簡潔に定義するためのキーワードだ。主な目的として、次の性質を満たすようなデータ型を定義するために使われる。
+`record`は、中身がそのまま意味になるデータを「値」として定義するキーワードだ。
 
 - 値による等価性: プロパティの値がすべて一致すれば等しいと判定される
-- 不変性: すべてのプロパティが書き換え不能である
+- 不変性: 生成後にプロパティを書き換えられない
+- 中身を表示する`ToString`と、一部だけ変えた複製を作る`with`式を自動で持つ
 
 ## なぜ必要か
 
-DTO(データの受け渡しだけを目的にした型)や値オブジェクトのように、中身が同じなら同じものとして扱いたい型は多い。クラスで同じ動作をさせるには`Equals`・`GetHashCode`・`ToString`を自分で書く必要があり、型が増えるたびに同じコードを繰り返すことになる。`record`はこの繰り返しを1行にまとめる。
+名前と年齢の組のようなデータは、どのインスタンスかではなく中身だけが意味を持つ。中身が同じなら同じものであり、中身を変えるなら別の値だ。クラスでこの性質を表すには`Equals`・`GetHashCode`・`ToString`を毎回手書きすることになるが、`record`はこれを型の宣言そのもので表す。
 
 ## 動かしてみる
 
 ```csharp
 var user = new User("Taro", 20);
 var other = new User("Taro", 20);
-Console.WriteLine(user);
-Console.WriteLine(user == other);
+Console.WriteLine(user); // 中身が読める形で表示される
+Console.WriteLine(user == other); // 別々にnewしても、値が同じなら等しい
 
-public record User(string Name, int Age);
+public record User(string Name, int Age); // この1行でNameとAgeを持つ型ができる
 ```
 
 ```
@@ -41,22 +42,20 @@ User { Name = Taro, Age = 20 }
 True
 ```
 
-`record User(string Name, int Age);`という1行で、`Name`と`Age`を持つ型ができる。`new`で別々に作った`user`と`other`は、プロパティの値が同じなので`==`はTrueになる。
-
 同じ`User`をクラスで書くと、省略されていた中身が見える。
 
 ```csharp
 var user = new UserClass("Taro", 20);
 var other = new UserClass("Taro", 20);
 Console.WriteLine(user);
-Console.WriteLine(user.Equals(other));
+Console.WriteLine(user.Equals(other)); // 手書きクラスの==は参照比較のままなのでEqualsで比べる
 
 public class UserClass
 {
     public string Name { get; }
     public int Age { get; }
 
-    public UserClass(string name, int age)
+    public UserClass(string name, int age) // 値を受け取り、読み取り専用のプロパティに設定する
     {
         Name = name;
         Age = age;
@@ -76,17 +75,17 @@ UserClass { Name = Taro, Age = 20 }
 True
 ```
 
-`record`が自動生成しているのは、この`Equals`・`GetHashCode`・`ToString`と、値を受け取って読み取り専用のプロパティに設定するコンストラクタだ。手書きのクラスは`Equals`を上書きしても`==`演算子は既定で参照比較のままなので、上のコードでは`Equals`メソッドを呼んで比較している。
+`record`が自動生成しているのは、このコンストラクタと`Equals`・`GetHashCode`・`ToString`だ。
 
 ## 最低限の理解
 
 - `record`のインスタンスは、`new`で作った後にプロパティの値を書き換えられない。書き換えようとするとコンパイルエラーになる
 - プロパティの値がすべて同じインスタンス同士は`==`でTrueになる。手書きのクラスでは既定でFalseになる
-- `with`式を使うと、元のインスタンスは変えずに一部のプロパティだけ変えた新しいインスタンスを作れる
+- 元の値は変えず、一部のプロパティだけ変えた新しいインスタンスが欲しいときは`with`式を使う
 
 ```csharp
 var user = new User("Taro", 20);
-var older = user with { Age = 21 };
+var older = user with { Age = 21 }; // userはそのまま。Ageだけ違う新しいインスタンスができる
 Console.WriteLine(older);
 Console.WriteLine(user == older);
 
@@ -110,7 +109,7 @@ C# 9より前(.NET Framework、C# 7/8など)のプロジェクトでは`record`�
 // NG: 配列プロパティは中身が同じでも参照が違うと等しくならない
 var a = new Order("1", new[] { "apple" });
 var b = new Order("1", new[] { "apple" });
-Console.WriteLine(a == b);
+Console.WriteLine(a == b); // Idは一致するが、Itemsは別の配列なのでFalse
 
 public record Order(string Id, string[] Items);
 ```
@@ -130,7 +129,7 @@ Console.WriteLine(a == b);
 public record Order(string Id, IReadOnlyList<string> Items)
 {
     public virtual bool Equals(Order? other) =>
-        other is not null && Id == other.Id && Items.SequenceEqual(other.Items);
+        other is not null && Id == other.Id && Items.SequenceEqual(other.Items); // 要素を1件ずつ比べる
 
     public override int GetHashCode() => Id.GetHashCode();
 }
