@@ -1,12 +1,18 @@
 ---
 title: "class / struct / record の使い分け"
 category: "文法"
-order: 20
-related: []
+order: 24
+related:
+  - class-basic.md
+  - struct-basic.md
+  - record-basic.md
+  - reference-vs-value-types.md
+  - equality.md
 ---
 
 ## 概要
 
+- class = 参照型のカスタム型、struct = 値型のカスタム型、record = 値等価などを自動生成する型修飾子（class/structどちらにも付けられる）
 - class / struct / record は型を定義するキーワードだが、メモリ配置と等価性の扱いが異なる
 - データの入れ物（DTO・値オブジェクト）を設計する場面で、どれを選ぶかが実務でよく問われる
 - 読了後、参照型と値型の違いを理解し、用途に応じて3つを使い分けられるようになる
